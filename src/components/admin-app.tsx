@@ -80,6 +80,8 @@ export function AdminApp() {
   }, []);
 
   useEffect(() => {
+    // This effect starts an external health/session check and updates its result asynchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void checkConnection();
   }, [checkConnection]);
 
@@ -103,6 +105,7 @@ export function AdminApp() {
   useEffect(() => {
     if (!authed) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mark the active section request as loading.
     setLoading(true);
     setError("");
     const run = section === "overview" ? loadOverview : section === "results" ? () => loadResults() : section === "traffic" ? () => loadLogs() : loadBans;
@@ -157,7 +160,7 @@ export function AdminApp() {
         <form className="md-card login-card stack" onSubmit={(event) => { event.preventDefault(); void login(); }}>
           <p className="eyebrow">PelicanBench</p>
           <h1 className="h2">管理入口</h1>
-          <p className="muted">口令来自环境变量 ADMIN_PASSWORD。演示环境写在文档页底部。</p>
+          <p className="muted">管理口令由站点环境变量 ADMIN_PASSWORD 配置。</p>
           {error ? <div className="banner-error" role="alert">{error}</div> : null}
           <TextField label="管理口令" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" disabled={loginBusy} />
           <Button type="submit" disabled={loginBusy || !configured || !password.trim()}>{loginBusy ? "验证中" : "进入"}</Button>
@@ -338,7 +341,7 @@ export function AdminApp() {
             <TextField label="模型" value={edit.model} onChange={(event) => setEdit({ ...edit, model: event.target.value })} />
             <TextField label="昵称" value={edit.nickname || ""} onChange={(event) => setEdit({ ...edit, nickname: event.target.value })} />
             <TextArea label="备注" value={edit.note || ""} onChange={(event) => setEdit({ ...edit, note: event.target.value })} />
-            <TextField label="Base URL，官方可留空" value={edit.baseUrl || ""} onChange={(event) => setEdit({ ...edit, baseUrl: event.target.value })} />
+            <TextField label="域名，官方可留空" value={edit.baseUrl || ""} onChange={(event) => setEdit({ ...edit, baseUrl: event.target.value })} />
           </div>
         ) : null}
       </Dialog>
@@ -372,7 +375,7 @@ function CreateDialog({ open, onClose, onCreate }: { open: boolean; onClose: () 
       <div className="stack">
         <TextField label="模型" value={model} onChange={(event) => setModel(event.target.value)} />
         <Segmented value={channel} onChange={setChannel} options={[{ value: "official", label: "官方" }, { value: "third_party", label: "第三方" }]} />
-        {channel === "third_party" ? <TextField label="Base URL" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /> : null}
+        {channel === "third_party" ? <TextField label="域名" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /> : null}
         <TextArea label="HTML" value={html} onChange={(event) => setHtml(event.target.value)} support="需要包含内联 SVG" />
       </div>
     </Dialog>

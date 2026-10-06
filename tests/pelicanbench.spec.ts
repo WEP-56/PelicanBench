@@ -151,14 +151,23 @@ test("backend uploads, admin CRUD, statistics, logs and bans work", async ({ req
       expect(publicResponse.status()).toBe(200);
       const item = await publicResponse.json();
       expect(item).toMatchObject({ model: `__regression__-${channel}`, totalTokens: 311, durationMs: 2200, thinkingLevel: "medium" });
-      expect(item.baseUrl).toBe(channel === "official" ? null : "https://relay.example/v1");
+      expect(item.baseUrl).toBe(channel === "official" ? null : "relay.example");
       expect(JSON.stringify(item)).not.toContain("do-not-save");
       expect(item).not.toHaveProperty("ip");
-      expect((await request.get(`/api/admin/results/${id}`)).status()).toBe(200);
+      const adminResponse = await request.get(`/api/admin/results/${id}`);
+      expect(adminResponse.status()).toBe(200);
+      const adminItem = await adminResponse.json();
+      expect(adminItem.baseUrl).toBe(channel === "official" ? null : "relay.example");
       expect((await request.patch(`/api/admin/results/${id}`, { headers, data: { status: "hidden" } })).status()).toBe(200);
       expect((await request.get(`/api/results/${id}`)).status()).toBe(404);
-      expect((await request.patch(`/api/admin/results/${id}`, { headers, data: { status: "published", note: "编辑已验证" } })).status()).toBe(200);
-      expect((await (await request.get(`/api/results/${id}`)).json()).note).toBe("编辑已验证");
+      expect((await request.patch(`/api/admin/results/${id}`, { headers, data: {
+        status: "published",
+        note: "编辑已验证",
+        ...(channel === "third_party" ? { baseUrl: "https://relay.example/v2" } : {}),
+      } })).status()).toBe(200);
+      const updated = await (await request.get(`/api/results/${id}`)).json();
+      expect(updated.note).toBe("编辑已验证");
+      expect(updated.baseUrl).toBe(channel === "official" ? null : "relay.example");
     }
     const created = await request.post("/api/admin/results", {
       headers,

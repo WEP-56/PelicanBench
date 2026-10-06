@@ -3,6 +3,12 @@ import net from "node:net";
 
 const BLOCKED = new Set(["localhost", "localhost.localdomain", "metadata.google.internal", "metadata.internal"]);
 
+function isBenchmarkIp(ip: string) {
+  if (net.isIP(ip) !== 4) return false;
+  const [a, b] = ip.split(".").map(Number);
+  return a === 198 && (b === 18 || b === 19);
+}
+
 export function isPrivateIp(ip: string): boolean {
   const kind = net.isIP(ip);
   if (kind === 4) {
@@ -25,6 +31,12 @@ export function isPrivateIp(ip: string): boolean {
     return false;
   }
   return true;
+}
+
+export function isPublicDnsResolution(records: { address: string }[], allowDevelopmentBenchmarkMapping: boolean) {
+  if (records.length === 0) return false;
+  if (allowDevelopmentBenchmarkMapping && records.every((record) => isBenchmarkIp(record.address))) return true;
+  return records.every((record) => !isPrivateIp(record.address));
 }
 
 export async function assertPublicUrl(raw: string) {
@@ -52,7 +64,11 @@ export async function assertPublicUrl(raw: string) {
     } catch {
       throw new Error("无法解析目标主机");
     }
-    if (records.length === 0 || records.some((record) => isPrivateIp(record.address))) {
+    // Some local development networks map public hostnames into RFC 2544's
+    // 198.18.0.0/15 range and transparently route them through an egress proxy.
+    // Permit that mapping only in development and only for hostnames, never IP literals.
+    const developmentBenchmarkMapping = process.env.NODE_ENV !== "production";
+    if (!isPublicDnsResolution(records, developmentBenchmarkMapping)) {
       throw new Error("目标解析到内网地址，已拒绝");
     }
   }

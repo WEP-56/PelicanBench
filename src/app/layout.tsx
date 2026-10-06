@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: { default: "PelicanBench", template: "%s · PelicanBench" },
   description: "社区视觉基准：让模型用内联 SVG 绘制鹈鹕骑自行车，人工判断外形与动态是否像模型真身。",
   applicationName: "PelicanBench",
+  icons: { icon: "/icon.png", apple: "/icon.png" },
 };
 
 export const dynamic = "force-dynamic";

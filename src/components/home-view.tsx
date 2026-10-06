@@ -108,7 +108,7 @@ export function HomeView({ stats }: { stats: HomeStats }) {
         </div>
         {stats.recent.length === 0 ? (
           <div className="md-card empty-state">
-            <img src="/images/empty-bench.jpg" alt="" />
+            <img src="/images/hero-pelican.jpg" alt="" />
             <h3 className="h3">还没有社区样本</h3>
             <p className="muted">第一条公示可以来自你的浏览器。不上传的话，结果只留在本地历史。</p>
             <Link className="md-btn md-btn-filled" href="/test">去测一次</Link>

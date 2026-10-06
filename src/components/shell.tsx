@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { IconClose, IconDocs, IconGallery, IconHistory, IconHome, IconLab, IconMenu, IconMoon, IconPalette, IconSun, LogoMark } from "./icons";
+import { IconClose, IconDocs, IconGallery, IconGithub, IconHistory, IconHome, IconLab, IconMenu, IconMoon, IconPalette, IconSun, LogoMark } from "./icons";
 import { useAppearance } from "./theme-provider";
 
 const NAV = [
@@ -40,6 +40,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const media = window.matchMedia(MOBILE_QUERY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize the responsive navigation with the browser viewport.
     setIsMobile(media.matches);
     try {
       setCollapsed(localStorage.getItem(COLLAPSED_KEY) === "true");
@@ -55,6 +56,7 @@ export function Shell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close the drawer after route navigation.
     setMobileOpen(false);
   }, [pathname]);
 
@@ -92,11 +94,12 @@ export function Shell({ children }: { children: ReactNode }) {
       }
     };
     window.addEventListener("keydown", onKey);
+    const toggleButton = toggleRef.current;
     return () => {
       window.clearTimeout(focusTimer);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
-      toggleRef.current?.focus();
+      toggleButton?.focus();
     };
   }, [isMobile, mobileOpen]);
 
@@ -176,6 +179,16 @@ export function Shell({ children }: { children: ReactNode }) {
           </button>
           <h1>{title}</h1>
           <div className="topbar-spacer" />
+          <a
+            className="md-btn md-btn-text md-icon-btn"
+            href="https://github.com/WEP-56/PelicanBench"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="在 GitHub 查看 PelicanBench 项目"
+            title="GitHub 项目"
+          >
+            <IconGithub />
+          </a>
           <button
             className="md-btn md-btn-text md-icon-btn"
             type="button"

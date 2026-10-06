@@ -6,6 +6,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.pglite/
 *.tsbuildinfo
 .env
 .env.*
@@ -14,5 +15,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+local-dev*.log
+AGENTS.md
+CLAUDE.md
+next-env.d.ts
 .DS_Store
 Thumbs.db

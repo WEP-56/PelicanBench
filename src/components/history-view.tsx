@@ -17,6 +17,7 @@ export function HistoryView() {
   const { notify } = useSnackbar();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore local history after client hydration.
     setItems(loadHistory());
     setReady(true);
   }, []);
@@ -42,7 +43,7 @@ export function HistoryView() {
       </div>
       {items.length === 0 ? (
         <div className="md-card empty-state">
-          <img src="/images/empty-bench.jpg" alt="" />
+          <img src="/images/hero-pelican.jpg" alt="" />
           <h3 className="h3">还没有本地记录</h3>
           <Link className="md-btn md-btn-filled" href="/test">开始一次测试</Link>
         </div>

@@ -25,6 +25,25 @@ async function readLimited(response: Response, max: number) {
   return new TextDecoder().decode(Buffer.concat(chunks));
 }
 
+function proxyFailure(error: unknown) {
+  const value = error && typeof error === "object" ? error as { name?: unknown; cause?: { code?: unknown } } : {};
+  const name = typeof value.name === "string" ? value.name : "";
+  const code = typeof value.cause?.code === "string" ? value.cause.code : "";
+  if (name === "TimeoutError" || ["ETIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT"].includes(code)) {
+    return { category: "upstream_timeout", message: "连接模型服务超时，请检查服务商状态和网络后重试。" };
+  }
+  if (["ENOTFOUND", "EAI_AGAIN", "EAI_FAIL"].includes(code)) {
+    return { category: "upstream_dns_failure", message: "无法解析模型服务域名，请检查 Base URL 和当前网络的 DNS。" };
+  }
+  if (["ECONNREFUSED", "ECONNRESET", "EHOSTUNREACH", "ENETUNREACH"].includes(code)) {
+    return { category: "upstream_connection_failure", message: "无法连接模型服务，请检查地址、端口和网络是否允许本站服务器出站访问。" };
+  }
+  if (/CERT|TLS|SSL|SELF_SIGNED/i.test(code)) {
+    return { category: "upstream_tls_failure", message: "模型服务的 TLS 证书验证失败，请检查 HTTPS 地址和证书配置。" };
+  }
+  return { category: "upstream_request_failed", message: "模型服务请求失败，请检查地址与网络。密钥和请求头未保存。" };
+}
+
 export async function POST(req: Request) {
   const started = Date.now();
   const ip = getIp(req);
@@ -42,7 +61,12 @@ export async function POST(req: Request) {
     if (typeof body.url !== "string") throw new HttpError(400, "缺少目标地址");
     // Validate prior to DNS/fetch; never copy req.headers into the upstream.
     const headers = validateForwardHeaders(body.headers);
-    const target = await assertPublicUrl(body.url);
+    let target: URL;
+    try {
+      target = await assertPublicUrl(body.url);
+    } catch (error) {
+      throw new HttpError(400, error instanceof Error ? error.message : "目标地址校验失败");
+    }
     host = target.hostname;
     pathname = target.pathname;
     let payload: string | undefined;
@@ -65,11 +89,11 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof HeaderConfigError) return Response.json({ error: error.message }, { status: 400 });
     if (error instanceof HttpError) return jsonError(error);
-    // Fetch exceptions can contain header values. Record only a fixed category.
+    const failure = proxyFailure(error);
     await logEvent({
       event: "proxy_error", path: "/api/proxy", ip,
-      meta: { host, pathname, category: "upstream_request_failed", durationMs: Date.now() - started },
+      meta: { host, pathname, category: failure.category, durationMs: Date.now() - started },
     }).catch(() => undefined);
-    return Response.json({ error: "一次性中转失败，请检查地址与网络。密钥和请求头未保存。" }, { status: 502 });
+    return Response.json({ error: failure.message }, { status: 502, headers: { "Cache-Control": "no-store" } });
   }
 }

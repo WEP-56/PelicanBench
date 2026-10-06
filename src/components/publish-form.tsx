@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { requestJson } from "@/lib/api-client";
 import { STANDARD_PROMPT, VERDICTS } from "@/lib/constants";
-import { isOfficialHost, resolveBase } from "@/lib/endpoints";
-import { shortUrl } from "@/lib/format";
+import { hostnameOnly, isOfficialHost, resolveBase } from "@/lib/endpoints";
 import { Button, Segmented, Switch, TextArea, TextField } from "./ui";
 import { useSnackbar } from "./theme-provider";
 
@@ -35,7 +34,7 @@ export function PublishForm({ draft, onPublished }: { draft: PublishDraft; onPub
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const resolved = resolveBase(draft.baseUrl, false);
-  const publicUrl = "href" in resolved ? resolved.href : "";
+  const publicUrl = "href" in resolved ? hostnameOnly(resolved.href) || "" : "";
   const mismatch = channel === "official" && !isOfficialHost(draft.baseUrl);
 
   async function submit() {
@@ -97,7 +96,7 @@ export function PublishForm({ draft, onPublished }: { draft: PublishDraft; onPub
           />
           {channel === "third_party" ? (
             <div className="url-banner">
-              公示时将展示去掉账号、查询参数后的地址：{publicUrl ? shortUrl(publicUrl) : "地址无效"}
+              公示时仅展示域名：{publicUrl || "域名无效"}
             </div>
           ) : (
             <p className="field-support">官方渠道不展示 Base URL。渠道由你声明，站点不会向 OpenAI 核对。</p>

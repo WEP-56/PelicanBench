@@ -117,6 +117,22 @@ test("invalid UA transport returns an actionable result without a request", asyn
   expect(result.error).toContain("一次性中转");
 });
 
+test("disabling the fallback also blocks a previously selected always-proxy mode", async () => {
+  const result = await runBench({
+    baseUrl: "https://never-called.invalid/v1",
+    apiKey: "fake-key",
+    protocol: "openai-chat",
+    model: "m",
+    thinking: "off",
+    autoV1: true,
+    allowProxy: false,
+    headerSettings: settings([row("X-Client", "pelicanbench")], "proxy"),
+  });
+  expect(result.ok).toBe(false);
+  expect(result.via).toBe("direct");
+  expect(result.error).toContain("一次性中转已关闭");
+});
+
 test("server rejects forbidden forwarded headers even when a client bypasses UI validation", async ({ request, baseURL }) => {
   const headers = { Origin: new URL(baseURL || "http://127.0.0.1:3000").origin, "X-Forwarded-For": "192.0.2.121" };
   for (const unsafe of ["Host", "Cookie", "Connection", "X-Forwarded-Host", REQUEST_TOKEN_HEADER]) {

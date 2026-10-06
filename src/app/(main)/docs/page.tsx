@@ -102,7 +102,7 @@ export default function DocsPage() {
               <li>中转拒绝内网地址、云元数据地址，以及模型列表和生成接口以外的路径，避免被当成开放代理。</li>
               <li>本地历史、外观、检查单都在 localStorage / sessionStorage。清除站点数据即消失。</li>
               <li>访问统计只记录路径、时间、IP、User-Agent 和来源页，用来做管理端的流量图。不记录密钥，也不自动上传你的生成结果。</li>
-              <li>公示是另一次明确动作。上传内容是 HTML、模型、协议、思考强度、token、用时、昵称和备注。官方渠道不上传 Base URL。第三方渠道上传去掉账号和查询参数后的地址。</li>
+              <li>公示是另一次明确动作。上传内容是 HTML、模型、协议、思考强度、token、用时、昵称和备注。官方渠道不上传 Base URL；第三方渠道只公开域名，不包含协议、端口、路径、账号或查询参数。</li>
             </ul>
           </section>
           <section className="md-card doc-block" id="rules">
@@ -111,7 +111,7 @@ export default function DocsPage() {
               <li>只有包含内联 SVG、且使用标准提示词的结果可以公示。</li>
               <li>选择公示之后，才会出现渠道选项。</li>
               <li>官方渠道：公开展示「官方渠道」，不展示 Base URL。如果地址不是 api.openai.com 或 api.anthropic.com，管理端会看到域名不一致标记，地址仍然不公开。</li>
-              <li>第三方渠道：公开展示清理后的 Base URL。这是为了让社区能对照中转站，不是站点自动认定对方有问题。</li>
+              <li>第三方渠道：只公开域名（例如 <code>hongshu.shop</code>），不展示协议、端口或 API 路径。这是为了让社区能对照中转站，不是站点自动认定对方有问题。</li>
               <li>你可以附上昵称、短备注，以及「像真身 / 存疑 / 像被降智」的个人判断。判断是你的，不是站点的评分。</li>
               <li>管理端可以隐藏或删除公示，也可以封禁滥用地址。</li>
             </ul>
@@ -125,11 +125,7 @@ export default function DocsPage() {
           <section className="admin-entry" id="admin">
             <p className="eyebrow">运维</p>
             <h2 className="h3">管理入口</h2>
-            <p className="muted">用于增删查公示、查看流量日志和封禁 IP。生产环境请更换环境变量 <code>ADMIN_PASSWORD</code>，不要使用演示口令。</p>
-            <p className="muted">本地预览的演示口令：<code>pelican-bench-admin</code>。自行部署时，以环境变量中设置的口令为准。</p>
-            <p className="muted">管理与公示上传由本站的 Next.js 后端和 PostgreSQL 提供，不能只部署静态页面。<code>/api/health</code> 可以检查数据库与表是否就绪；新数据库需要先执行 <code>npx drizzle-kit push</code>。</p>
-            <p className="muted">反向代理应传递正确的 <code>X-Forwarded-Host</code>，并覆盖客户端同名请求头。生产环境也可用 <code>APP_URL</code> 固定本站公开地址。若预览框不允许保存 Cookie，请在独立窗口打开管理页。</p>
-            <Link className="md-btn md-btn-outlined" href="/admin">打开 /admin</Link>
+            <Link className="md-btn md-btn-outlined" href="/admin">打开管理入口</Link>
           </section>
         </div>
       </div>

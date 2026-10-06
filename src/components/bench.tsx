@@ -60,6 +60,7 @@ export function Bench() {
 
   useEffect(() => {
     const loaded = loadPrefs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore browser-only preferences after hydration.
     setPrefs(loaded);
     setApiKey(loadApiKey(loaded.rememberKey));
     setReady(true);
@@ -81,10 +82,19 @@ export function Bench() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    startRef.current = () => void generate();
+  });
+
   const endpoint = useMemo(() => buildEndpoint(prefs.baseUrl, prefs.protocol, prefs.autoV1), [prefs.baseUrl, prefs.protocol, prefs.autoV1]);
   const checkedHeaders = inspectHeaders(headerSettings.entries);
-  const headerError = checkedHeaders.errors[0]?.message || (checkedHeaders.needsProxy && headerSettings.transport !== "proxy"
-    ? "User-Agent 需要一次性中转，请在请求头配置中明确启用，或停用该头。" : "");
+  const headerError = checkedHeaders.errors[0]?.message || (
+    headerSettings.transport === "proxy" && !prefs.allowProxy
+      ? "一次性中转已关闭，当前请求不会发往本站代理。请切换为浏览器优先；若配置了 User-Agent，请停用该头或重新开启中转。"
+      : checkedHeaders.needsProxy && headerSettings.transport !== "proxy"
+        ? "User-Agent 需要一次性中转，请在请求头配置中明确启用，或停用该头。"
+        : ""
+  );
   const thinking = THINKING.find((item) => item.id === prefs.thinking);
   const hints = models.length ? models : MODEL_HINTS[prefs.protocol];
   const filteredModels = models.filter((item) => item.toLowerCase().includes(modelQuery.toLowerCase()));
@@ -192,8 +202,6 @@ export function Bench() {
     }
   }
 
-  startRef.current = () => void generate();
-
   function rememberChecklist(next: Record<string, boolean>, nextVerdict = verdict) {
     if (!historyId) return;
     const all = JSON.parse(localStorage.getItem("pb-history") || "[]") as HistoryItem[];
@@ -249,7 +257,13 @@ export function Bench() {
             <p className="field-support">{protocolOf(prefs.protocol)?.desc}</p>
             <p className="mono muted">{"href" in endpoint ? `POST ${endpoint.href}` : endpoint.error}</p>
             <Switch checked={prefs.autoV1} onChange={(autoV1) => patch({ autoV1 })} label="自动补全 /v1" support="地址已经带版本路径时不会重复追加。" />
-            <Switch checked={prefs.allowProxy} onChange={(allowProxy) => patch({ allowProxy })} label="跨域失败时一次性中转" support={headerSettings.transport === "proxy" ? "请求头配置已选择始终中转；当前开关只对浏览器优先模式生效。" : "只在浏览器直连失败时，把这一次请求转发给你的地址。密钥不入库。"} />
+            <Switch checked={prefs.allowProxy} onChange={(allowProxy) => {
+              patch({ allowProxy });
+              if (!allowProxy && headerSettings.transport === "proxy") setHeaderSettings({ ...headerSettings, transport: "auto" });
+            }} label="跨域失败时一次性中转" support={prefs.allowProxy
+              ? "只在浏览器直连失败时中转。请求头配置也可明确要求始终中转。"
+              : "关闭后不会使用本站中转，包括请求头配置中的始终中转。"
+            } />
           </section>
 
           <HeaderEditor
@@ -334,7 +348,7 @@ export function Bench() {
               </>
             ) : (
               <div className="empty-state">
-                <img src="/images/empty-bench.jpg" alt="" />
+                <img src="/images/hero-pelican.jpg" alt="" />
                 <p className="muted">生成后会在这里直接渲染模型返回的 HTML。预览禁止外部网络，方便看出它有没有偷偷引用图片。</p>
                 {result?.raw ? <Button variant="text" onClick={() => setRawOpen(true)}>查看原始响应</Button> : null}
               </div>

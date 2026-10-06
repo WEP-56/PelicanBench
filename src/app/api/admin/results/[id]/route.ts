@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { publicResults } from "@/db/schema";
 import { requireAdmin } from "@/server/auth";
 import { getResult, logAdmin, toAdmin } from "@/server/data";
-import { resolveBase } from "@/lib/endpoints";
+import { hostnameOnly, resolveBase } from "@/lib/endpoints";
 import { getIp, HttpError, jsonError, readJson } from "@/server/http";
 
 export const dynamic = "force-dynamic";
@@ -44,13 +44,15 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       const resolved = resolveBase(body.baseUrl, true);
       if ("error" in resolved) throw new HttpError(400, resolved.error);
       patch.channel = "third_party";
-      patch.baseUrl = resolved.href;
+      patch.baseUrl = hostnameOnly(resolved.href);
+      if (!patch.baseUrl) throw new HttpError(400, "Base URL 域名无效");
     } else if (typeof body.baseUrl === "string" && body.channel !== "official") {
       if (!body.baseUrl.trim()) patch.baseUrl = null;
       else {
         const resolved = resolveBase(body.baseUrl, true);
         if ("error" in resolved) throw new HttpError(400, resolved.error);
-        patch.baseUrl = resolved.href;
+        patch.baseUrl = hostnameOnly(resolved.href);
+        if (!patch.baseUrl) throw new HttpError(400, "Base URL 域名无效");
       }
     }
     await db.update(publicResults).set(patch).where(eq(publicResults.id, id));

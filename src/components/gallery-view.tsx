@@ -95,7 +95,7 @@ export function GalleryView() {
       {error ? <div className="banner-error">{error}</div> : null}
       {!data ? <div className="skeleton" style={{ height: 220 }} /> : data.items.length === 0 ? (
         <div className="md-card empty-state">
-          <img src="/images/empty-bench.jpg" alt="" />
+          <img src="/images/hero-pelican.jpg" alt="" />
           <h3 className="h3">这个筛选下还没有公示</h3>
           <p className="muted">测试完成之后，可以自己决定要不要成为第一条。</p>
         </div>

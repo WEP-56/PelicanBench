@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { assertSameOrigin, HttpError } from "../src/server/http";
 import { issueRequestToken, verifyRequestToken } from "../src/server/request-verification";
 import { REQUEST_TOKEN_HEADER, REQUEST_TOKEN_PATH, REQUEST_TOKEN_REJECTED } from "../src/lib/request-verification";
+import { isPublicDnsResolution } from "../src/server/ssrf";
 import { STANDARD_PROMPT } from "../src/lib/constants";
 
 const HTML = '<!DOCTYPE html><html><head><title>测试输出</title></head><body><svg viewBox="0 0 400 200"><circle cx="100" cy="100" r="40" fill="teal"><animate attributeName="cx" values="100;300;100" dur="3s" repeatCount="indefinite"/></circle></svg></body></html>';
@@ -23,6 +24,15 @@ function denied(request: Request) {
 function stripSourceHeaders(headers: Record<string, string>) {
   return Object.fromEntries(Object.entries(headers).filter(([name]) => !["origin", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"].includes(name.toLowerCase())));
 }
+
+test("SSRF policy allows synthetic benchmark DNS only in development and only as a complete resolution", () => {
+  const benchmark = [{ address: "198.18.1.160" }];
+  expect(isPublicDnsResolution(benchmark, true)).toBe(true);
+  expect(isPublicDnsResolution(benchmark, false)).toBe(false);
+  expect(isPublicDnsResolution([{ address: "198.18.1.160" }, { address: "93.184.216.34" }], true)).toBe(false);
+  expect(isPublicDnsResolution([{ address: "127.0.0.1" }], true)).toBe(false);
+  expect(isPublicDnsResolution([{ address: "93.184.216.34" }], false)).toBe(true);
+});
 
 test("signed request proofs reject tampering, expiry and admin session token formats", () => {
   const now = Date.now();
@@ -115,6 +125,16 @@ test("live APIs accept stripped-header page proof without disabling cross-site p
   expect(crossSite.status()).toBe(403);
   const foreignTokenRead = await request.get(REQUEST_TOKEN_PATH, { headers: { "Sec-Fetch-Site": "cross-site" } });
   expect(foreignTokenRead.status()).toBe(403);
+});
+
+test("proxy explains blocked target URLs instead of returning a generic network error", async ({ request, baseURL }) => {
+  const origin = new URL(baseURL || "http://127.0.0.1:3000").origin;
+  const response = await request.post("/api/proxy", {
+    headers: { Origin: origin },
+    data: { url: "http://127.0.0.1/v1/models", method: "GET", headers: {} },
+  });
+  expect(response.status(), await response.text()).toBe(400);
+  expect((await response.json()).error).toContain("内网地址不被允许");
 });
 
 test("model listing and generation recover from stripped headers and refresh a stale token once", async ({ page }) => {

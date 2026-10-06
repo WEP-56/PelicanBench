@@ -2,7 +2,7 @@ import { and, count, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { adminLogs, ipBans, publicResults, trafficEvents } from "@/db/schema";
 import { STANDARD_PROMPT } from "@/lib/constants";
-import { resolveBase } from "@/lib/endpoints";
+import { resolveBase, hostnameOnly } from "@/lib/endpoints";
 import type { PublicResult } from "@/lib/types";
 import { REFERENCE_SAMPLES } from "@/content/reference-html";
 import { HttpError } from "./http";
@@ -18,7 +18,7 @@ export function toPublic(row: Row, includeHtml = true): PublicResult {
     protocol: row.protocol,
     thinkingLevel: row.thinkingLevel,
     channel: row.channel,
-    baseUrl: row.channel === "third_party" ? row.baseUrl : null,
+    baseUrl: row.channel === "third_party" ? hostnameOnly(row.baseUrl) : null,
     html: includeHtml ? row.html : "",
     prompt: row.prompt,
     inputTokens: row.inputTokens,
@@ -37,7 +37,7 @@ export function toPublic(row: Row, includeHtml = true): PublicResult {
 export function toAdmin(row: Row, includeHtml = false) {
   return {
     ...toPublic(row, includeHtml),
-    baseUrl: row.baseUrl,
+    baseUrl: hostnameOnly(row.baseUrl),
     ip: row.ip,
     userAgent: row.userAgent,
     status: row.status,
@@ -114,7 +114,8 @@ export function validateSubmission(body: unknown, admin = false) {
     const raw = textOf(record.baseUrl, 8, 300, "Base URL");
     const resolved = resolveBase(raw, true);
     if ("error" in resolved) throw new HttpError(400, resolved.error);
-    baseUrl = resolved.href;
+    baseUrl = hostnameOnly(resolved.href);
+    if (!baseUrl) throw new HttpError(400, "Base URL 域名无效");
   }
   const verdict = optionalText(record.verdict, 20);
   if (!VERDICTS.has(verdict)) throw new HttpError(400, "判断不被接受");

@@ -16,6 +16,9 @@ export default defineConfig({
   use: {
     baseURL: process.env.PELICANBENCH_TEST_URL || "http://127.0.0.1:3000",
     browserName: "chromium",
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } }
+      : {}),
     headless: true,
     viewport: { width: 1440, height: 900 },
     trace: "retain-on-failure",

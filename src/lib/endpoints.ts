@@ -24,6 +24,17 @@ export function resolveBase(input: string, autoV1: boolean): { href: string } | 
   return { href: url.toString().replace(/\/+$/, "") };
 }
 
+export function hostnameOnly(input: string | null | undefined): string | null {
+  if (!input?.trim()) return null;
+  try {
+    const raw = input.trim();
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    return url.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildEndpoint(
   base: string,
   protocol: Protocol,

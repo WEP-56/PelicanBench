@@ -106,6 +106,9 @@ async function callUpstream(options: {
   headerSettings?: HeaderSettings;
   signal?: AbortSignal;
 }) {
+  if (options.headerSettings?.transport === "proxy" && !options.allowProxy) {
+    throw new TransportError("一次性中转已关闭，请改用浏览器优先或重新开启中转。", "direct");
+  }
   assertHeaderTransport(options.headerSettings);
   const entries = options.headerSettings?.entries ?? [];
   const runProxy = async () => {
@@ -221,7 +224,7 @@ export async function runBench(options: ConnectionOptions & { model: string; thi
   const started = performance.now();
   const initial: RunResult = {
     ok: false, html: null, raw: "", thinkingText: null, fromFence: false, usage: emptyUsage,
-    durationMs: 0, via: options.headerSettings?.transport === "proxy" ? "proxy" : "direct",
+    durationMs: 0, via: options.allowProxy && options.headerSettings?.transport === "proxy" ? "proxy" : "direct",
     endpoint: "href" in endpoint ? endpoint.href : "", externalRefs: [],
   };
   if ("error" in endpoint) return { ...initial, error: endpoint.error };

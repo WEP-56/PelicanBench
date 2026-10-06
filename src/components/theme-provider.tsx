@@ -30,6 +30,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const loaded = loadAppearance();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate user appearance from browser storage.
     setAppearance(loaded);
     applyAppearance(loaded);
     setReady(true);
