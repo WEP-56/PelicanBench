@@ -111,7 +111,7 @@ export function validateSubmission(body: unknown, admin = false) {
   if (!admin && prompt !== STANDARD_PROMPT) throw new HttpError(400, "公示只接受标准提示词生成的结果");
   let baseUrl: string | null = null;
   if (channel === "third_party") {
-    const raw = textOf(record.baseUrl, 8, 300, "Base URL");
+    const raw = textOf(record.baseUrl, 1, 300, "域名");
     const resolved = resolveBase(raw, true);
     if ("error" in resolved) throw new HttpError(400, resolved.error);
     baseUrl = hostnameOnly(resolved.href);

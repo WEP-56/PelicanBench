@@ -17,7 +17,7 @@ PelicanBench 需要 **Node.js 20.9+**、一个 PostgreSQL 数据库和可运行 
 ```bash
 git clone https://github.com/WEP-56/PelicanBench.git
 cd PelicanBench
-npm ci
+npm ci --include=dev
 ```
 
 ### 2. 配置环境变量
@@ -39,7 +39,7 @@ npm ci
 在部署环境中设置好 `DATABASE_URL` 后执行：
 
 ```bash
-npx drizzle-kit push --url "$DATABASE_URL"
+npx drizzle-kit push --dialect postgresql --schema ./src/db/schema.ts --url "$DATABASE_URL"
 ```
 
 首次部署和数据库结构更新时运行此命令。生产环境请先做好数据库备份，并确认连接的是目标数据库。

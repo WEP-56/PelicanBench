@@ -169,6 +169,23 @@ test("backend uploads, admin CRUD, statistics, logs and bans work", async ({ req
       expect(updated.note).toBe("编辑已验证");
       expect(updated.baseUrl).toBe(channel === "official" ? null : "relay.example");
     }
+    const shortDomainUpload = await request.post("/api/results", {
+      headers,
+      data: {
+        html: HTML,
+        model: "__regression__-short-domain",
+        protocol: "openai-chat",
+        thinkingLevel: "off",
+        channel: "third_party",
+        baseUrl: "a.co",
+        prompt: STANDARD_PROMPT,
+      },
+    });
+    const shortDomainBody = await shortDomainUpload.json();
+    expect(shortDomainUpload.status(), JSON.stringify(shortDomainBody)).toBe(200);
+    ids.push(shortDomainBody.id as string);
+    expect((await (await request.get(`/api/results/${shortDomainBody.id}`)).json()).baseUrl).toBe("a.co");
+
     const created = await request.post("/api/admin/results", {
       headers,
       data: { html: HTML, model: "__regression__-admin", protocol: "openai-chat", thinkingLevel: "off", channel: "official", prompt: STANDARD_PROMPT },
